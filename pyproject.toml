@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ludex-emulators"
+version = "0.1.0"
+description = "Emulator plugin for ludex: pinned emulator downloads, ROM libraries and launching"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.optional-dependencies]
+ludex = ["ludex @ https://github.com/hikaps/ludex/releases/download/beta/ludex.tar.gz"]
+test = ["pytest==9.1.1", "ludex @ https://github.com/hikaps/ludex/releases/download/beta/ludex.tar.gz"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ludex_emulators = ["manifest.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
