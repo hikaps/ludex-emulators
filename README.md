@@ -2,7 +2,7 @@
 
 A [ludex](https://github.com/hikaps/ludex) plugin that installs pinned emulators and launches your ROMs with them. First target: PlayStation 2 with PCSX2 on Linux.
 
-Status: emulator install and the Emulators view work; the ROM account and launch are not in yet.
+Status: v1 feature-complete (install, ROM account, launch); not yet released.
 
 ## v1 scope
 
@@ -16,7 +16,16 @@ Status: emulator install and the Emulators view work; the ROM account and launch
 
 It never downloads BIOS, firmware, keys or games. You supply those. It only downloads the emulator itself, from the URL and checksum pinned in the manifest.
 
-## Install (once it has features)
+## Use
+
+```sh
+ludex account add emulators ps2 --set folder=~/Roms/ps2 --set system=ps2
+ludex import --all
+ludex emulators install pcsx2        # or the Emulators view
+ludex launch "Game Title"
+```
+
+## Install
 
 ```sh
 ludex plugin add git+https://github.com/hikaps/ludex-emulators   # runs with your permissions
