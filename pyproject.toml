@@ -12,8 +12,8 @@ license-files = ["LICENSE"]
 dependencies = []
 
 [project.optional-dependencies]
-ludex = ["ludex @ https://github.com/hikaps/ludex/releases/download/beta/ludex.tar.gz"]
-test = ["pytest==9.1.1", "ludex @ https://github.com/hikaps/ludex/releases/download/beta/ludex.tar.gz"]
+ludex = ["ludex-games @ https://github.com/hikaps/ludex/releases/download/beta/ludex.tar.gz"]
+test = ["pytest==9.1.1", "ludex-games @ https://github.com/hikaps/ludex/releases/download/beta/ludex.tar.gz"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
