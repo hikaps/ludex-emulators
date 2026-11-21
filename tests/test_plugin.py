@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import fcntl
 import os
+import subprocess
 import sys
+from pathlib import Path
 from importlib.metadata import EntryPoint
 
 import pytest
@@ -84,7 +86,12 @@ def test_install_starts_service(root, linux, monkeypatch):
     result = COMMANDS["install"].run(plugin.CommandContext(conn="conn", providers={}), ["pcsx2"])
     assert result.data["state"] == "installing"
     args, kwargs = calls[0]
-    assert args[1:4] == ("emulators", "install-pcsx2", [sys.executable, "-m", "ludex_emulators", "install", "pcsx2"])
+    assert args[1:3] == ("emulators", "install-pcsx2")
+    argv = args[3]
+    assert argv[:2] == [sys.executable, "-c"] and argv[3:] == [str(Path(plugin.__file__).resolve().parent.parent), "pcsx2"]
+    # the child must import the plugin from a bare interpreter, with only that folder added
+    out = subprocess.run([argv[0], "-S", "-c", argv[2].replace("main(", "print(", 1).replace("sys.exit(", "(", 1), *argv[3:]], capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
     assert kwargs["cwd"] == root
 
 

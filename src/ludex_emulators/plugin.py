@@ -20,6 +20,8 @@ from .paths import InstallError, ensure_dir, state_root
 from .roms import RomError, resolve, scan
 
 _MANIFEST = load_manifest()
+# ludex puts a managed plugin on sys.path only in its own process, so the job child needs the package folder spelled out.
+_BOOTSTRAP = "import sys; sys.path.insert(0, sys.argv[1]); from ludex_emulators.__main__ import main; sys.exit(main(['install', sys.argv[2]]))"
 
 
 class _Parser(argparse.ArgumentParser):
@@ -47,7 +49,7 @@ def _install(ctx: CommandContext, args: Sequence[str]) -> CommandResult:
         ensure_dir(root)
     except InstallError as exc:
         raise LudexError(exc.code, exc.message) from None
-    start_service(ctx.conn, "emulators", f"install-{emu.id}", [sys.executable, "-m", "ludex_emulators", "install", emu.id], cwd=root, settle=0.5)
+    start_service(ctx.conn, "emulators", f"install-{emu.id}", [sys.executable, "-c", _BOOTSTRAP, str(Path(__file__).resolve().parent.parent), emu.id], cwd=root, settle=0.5)
     return CommandResult(
         {"emulator": emu.id, "version": emu.version, "state": "installing"},
         f"installing {emu.name} {emu.version} in the background (see Jobs); it asks for your own BIOS on first start",
