@@ -18,7 +18,8 @@ The plugin contract is specified in the docstrings of `ludex.plugins` (in the lu
 
 - `manifest.json` + `manifest.py`: pinned emulator entries and their validation.
 - `installer.py`: download, verify, install, remove (stdlib only, injectable opener; also runs as `python -m ludex_emulators install ID`, started by ludex as a service job).
-- `roms.py`: ROM scanning and title cleanup. `plugin.py`: exports `PROVIDER` (entry point group `ludex.providers`, name `emulators`): `fetch`, `installed`, `launch_command`, `commands` (`install`, `remove`), `views` (Emulators table with confirmed row actions).
+- `roms.py`: ROM scanning, title cleanup and path-safe ROM resolution. `plugin.py`: exports `PROVIDER` (entry point group `ludex.providers`, name `emulators`): `fetch`, `installed`, `launch_command`, `commands` (`install`, `remove`), `views` (Emulators table with confirmed row actions).
+- `paths.py`: state folder and `InstallError`; `__main__.py`: `python -m ludex_emulators install ID`.
 - `scripts/pin.py` (dev only): prints a manifest entry from an upstream release for review.
 
 ## Development Commands
