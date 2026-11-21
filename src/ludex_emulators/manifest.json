@@ -1,7 +1,26 @@
 {
   "schema": 1,
   "systems": {
-    "ps2": {"name": "PlayStation 2", "emulator": "pcsx2", "extensions": [".iso", ".chd", ".cso", ".gz"]}
+    "ps2": {
+      "name": "PlayStation 2",
+      "emulator": "pcsx2",
+      "extensions": [
+        ".iso",
+        ".chd",
+        ".cso",
+        ".gz"
+      ]
+    },
+    "switch": {
+      "name": "Nintendo Switch",
+      "emulator": "lichii",
+      "extensions": [
+        ".nsp",
+        ".xci",
+        ".nsz",
+        ".xcz"
+      ]
+    }
   },
   "emulators": {
     "pcsx2": {
@@ -13,8 +32,28 @@
       "url": "https://github.com/PCSX2/pcsx2/releases/download/v2.8.2/pcsx2-v2.8.2-linux-appimage-x64-Qt.AppImage",
       "size": 60119544,
       "sha256": "0c46bb6a88aa2782b10853a7b07cf3387ba99cbef2b966372cd2315b8571abea",
-      "launch": ["-batch", "-fullscreen", "{rom}"],
+      "launch": [
+        "-batch",
+        "-fullscreen",
+        "{rom}"
+      ],
       "source": "https://github.com/PCSX2/pcsx2/releases/tag/v2.8.2"
+    },
+    "lichii": {
+      "name": "Lichii (experimental)",
+      "version": "build-366",
+      "platform": "linux-x86_64",
+      "kind": "appimage",
+      "file": "lichii.AppImage",
+      "url": "https://github.com/zortos293/Lichii/releases/download/build-366/lichii-linux-x86_64.AppImage",
+      "size": 129415672,
+      "sha256": "490769b0703ca72e28e3801711c03120222a1c3c5acb4b4a77a23802d715271c",
+      "launch": [
+        "-f",
+        "-g",
+        "{rom}"
+      ],
+      "source": "https://github.com/zortos293/Lichii/releases/tag/build-366"
     }
   }
 }

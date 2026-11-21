@@ -25,7 +25,7 @@ def linux(monkeypatch):
 
 
 def _row(root):
-    return PROVIDER.views[0].fetch({}).rows[0]
+    return next(r for r in PROVIDER.views[0].fetch({}).rows if r.id == "pcsx2")
 
 
 def _put(root, version, executable=True):
@@ -160,3 +160,24 @@ def test_launch_command(root, tmp_path):
     assert PROVIDER.launch_command(config, sid) == [str(exe), "-batch", "-fullscreen", str((tmp_path / "roms" / sid).resolve())]
     with pytest.raises(SourceError):
         PROVIDER.launch_command(config, "../x.iso")
+
+
+def test_switch_account_launches_lichii(root, tmp_path):
+    folder = tmp_path / "roms"
+    folder.mkdir()
+    (folder / "Some_Game [0100ABC].nsp").write_bytes(b"x")
+    (folder / "other.iso").write_bytes(b"x")
+    config = {"folder": str(folder), "system": "switch"}
+    assert [(g.store_id, g.title) for g in PROVIDER.fetch(config).games] == [("Some_Game [0100ABC].nsp", "Some Game")]
+    lichii = plugin._MANIFEST.emulators["lichii"]
+    path = root / "emulators" / "lichii" / lichii.version / lichii.file
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"x")
+    path.chmod(0o755)
+    assert PROVIDER.launch_command(config, "Some_Game [0100ABC].nsp") == [str(path), "-f", "-g", str((folder / "Some_Game [0100ABC].nsp").resolve())]
+
+
+def test_view_lists_both_emulators(root, linux):
+    rows = {r.id: r for r in PROVIDER.views[0].fetch({}).rows}
+    assert rows["lichii"].cells[:3] == ("Lichii (experimental)", "Nintendo Switch", "build-366")
+    assert rows["pcsx2"].cells[1] == "PlayStation 2"

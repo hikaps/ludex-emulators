@@ -16,6 +16,7 @@ def test_bundled_manifest_loads():
     manifest = load_manifest()
     assert manifest.emulators["pcsx2"].size == 60119544
     assert manifest.systems["ps2"].emulator == "pcsx2"
+    assert manifest.systems["switch"].emulator == "lichii" and manifest.emulators["lichii"].size == 129415672
 
 
 @pytest.mark.parametrize("mutate", [
