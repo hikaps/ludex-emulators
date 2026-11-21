@@ -52,7 +52,7 @@ def _install(ctx: CommandContext, args: Sequence[str]) -> CommandResult:
     start_service(ctx.conn, "emulators", f"install-{emu.id}", [sys.executable, "-c", _BOOTSTRAP, str(Path(__file__).resolve().parent.parent), emu.id], cwd=root, settle=0.5)
     return CommandResult(
         {"emulator": emu.id, "version": emu.version, "state": "installing"},
-        f"installing {emu.name} {emu.version} in the background (see Jobs); it asks for your own BIOS on first start",
+        f"installing {emu.name} {emu.version} in the background (see Jobs); the emulator asks for your own BIOS, keys or firmware on first start",
     )
 
 
