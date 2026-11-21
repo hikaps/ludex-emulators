@@ -7,6 +7,7 @@ from importlib.metadata import EntryPoint
 
 import pytest
 from ludex.errors import LudexError
+from ludex.plugins import SourceError
 from ludex.loader import load_providers
 
 from ludex_emulators import plugin
@@ -34,7 +35,7 @@ def _put(root, version, executable=True):
 
 def test_loader_accepts_provider():
     loaded, problems = load_providers([EntryPoint("emulators", "ludex_emulators.plugin:PROVIDER", "ludex.providers")])
-    assert problems == {} and loaded["emulators"].capabilities == ("commands", "views")
+    assert problems == {} and loaded["emulators"].capabilities == ("owned", "installed", "launch", "commands", "views")
 
 
 def test_row_unsupported(root, monkeypatch):
@@ -110,3 +111,45 @@ def test_remove_command(root, linux):
     assert COMMANDS["remove"].run(ctx, ["pcsx2"]).data["removed"] is False
     _put(root, EMU.version)
     assert COMMANDS["remove"].run(ctx, ["pcsx2"]).data["removed"] is True
+
+
+def _account(tmp_path):
+    folder = tmp_path / "roms"
+    (folder / "sub").mkdir(parents=True)
+    (folder / "sub" / "A_Game (USA).iso").write_bytes(b"x")
+    return {"folder": str(folder), "system": "ps2"}
+
+
+def test_fetch_and_installed(root, tmp_path):
+    config = _account(tmp_path)
+    result = PROVIDER.fetch(config)
+    assert result.complete and [(g.store, g.store_id, g.title) for g in result.games] == [("emulators", "sub/A_Game (USA).iso", "A Game")]
+    assert set(PROVIDER.installed(config)) == {"sub/A_Game (USA).iso"}
+    assert PROVIDER.game_folder(config, "sub/A_Game (USA).iso") == (tmp_path / "roms" / "sub").resolve()
+
+
+def test_empty_folder_is_an_error_not_an_empty_library(root, tmp_path):
+    (tmp_path / "empty").mkdir()
+    with pytest.raises(SourceError) as exc:
+        PROVIDER.fetch({"folder": str(tmp_path / "empty"), "system": "ps2"})
+    assert exc.value.code == "folder_empty"
+
+
+@pytest.mark.parametrize("config", [{"folder": "relative", "system": "ps2"}, {"folder": "/tmp", "system": "nope"}, {}])
+def test_bad_config(root, config):
+    with pytest.raises(SourceError) as exc:
+        PROVIDER.fetch(config)
+    assert exc.value.code == "invalid_config"
+
+
+def test_launch_command(root, tmp_path):
+    config = _account(tmp_path)
+    sid = "sub/A_Game (USA).iso"
+    with pytest.raises(SourceError) as exc:
+        PROVIDER.launch_command(config, sid)
+    assert exc.value.code == "emulator_missing"
+    _put(root, EMU.version)
+    exe = root / "emulators" / "pcsx2" / EMU.version / EMU.file
+    assert PROVIDER.launch_command(config, sid) == [str(exe), "-batch", "-fullscreen", str((tmp_path / "roms" / sid).resolve())]
+    with pytest.raises(SourceError):
+        PROVIDER.launch_command(config, "../x.iso")

@@ -4,14 +4,20 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 
 from ludex.errors import LudexError
-from ludex.plugins import Command, CommandContext, CommandResult, Provider, View, ViewAction, ViewRow, ViewTable
+from ludex.plugins import (
+    Command, CommandContext, CommandResult, ConfigField, FetchResult, OwnedGame, Provider, SourceError, View,
+    ViewAction, ViewRow, ViewTable,
+)
 from ludex.services import start_service
 
 from . import installer
 from .manifest import Emulator, host_platform, load_manifest
+from .manifest import System
 from .paths import InstallError, ensure_dir, state_root
+from .roms import RomError, resolve, scan
 
 _MANIFEST = load_manifest()
 
@@ -90,10 +96,64 @@ def _emulators_view(settings: Mapping[str, str]) -> ViewTable:
     )
 
 
+def _account(config: Mapping[str, str]) -> tuple[Path, System]:
+    folder = Path(config.get("folder", "")).expanduser()
+    if not config.get("folder") or not folder.is_absolute():
+        raise SourceError("invalid_config", "folder must be absolute (a leading ~ is fine)")
+    system = _MANIFEST.systems.get(config.get("system", ""))
+    if system is None:
+        raise SourceError("invalid_config", "unknown system")
+    return folder, system
+
+
+def _scan(config: Mapping[str, str]) -> list[tuple[str, str]]:
+    folder, system = _account(config)
+    try:
+        return scan(folder, system)
+    except RomError as exc:
+        raise SourceError(exc.code, exc.message) from None
+
+
+def _rom(config: Mapping[str, str], store_id: str) -> tuple[Path, System]:
+    folder, system = _account(config)
+    try:
+        return resolve(folder, store_id, system), system
+    except RomError as exc:
+        raise SourceError(exc.code, exc.message) from None
+
+
+def _fetch(config: Mapping[str, str]) -> FetchResult:
+    return FetchResult([OwnedGame("emulators", sid, title) for sid, title in _scan(config)], True, "rom folder")
+
+
+def _installed(config: Mapping[str, str]) -> set[str]:
+    return {sid for sid, _ in _scan(config)}
+
+
+def _game_folder(config: Mapping[str, str], store_id: str) -> Path:
+    return _rom(config, store_id)[0].parent
+
+
+def _launch_command(config: Mapping[str, str], store_id: str) -> list[str]:
+    rom, system = _rom(config, store_id)
+    emu = _MANIFEST.emulators[system.emulator]
+    exe = installer.binary(state_root(), emu)
+    if exe is None:
+        raise SourceError("emulator_missing", f"{emu.name} is not installed; install it from the Emulators view or with 'ludex emulators install {emu.id}'")
+    return [str(exe), *(str(rom) if a == "{rom}" else a for a in emu.launch)]
+
+
 PROVIDER = Provider(
     name="emulators",
     help="Installs pinned emulators and launches your ROMs with them",
-    config_fields=(),
+    config_fields=(
+        ConfigField("folder", "folder with your ROMs (searched recursively)", path=True),
+        ConfigField("system", "console the ROMs are for", kind="choice", choices=tuple(sorted(_MANIFEST.systems))),
+    ),
+    fetch=_fetch,
+    installed=_installed,
+    game_folder=_game_folder,
+    launch_command=_launch_command,
     commands=(
         Command("install", "install a pinned emulator in the background: install EMULATOR", _install),
         Command("remove", "remove an installed emulator: remove EMULATOR", _remove),
